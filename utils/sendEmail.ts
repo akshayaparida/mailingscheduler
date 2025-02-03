@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { prisma } from '@/lib/prisma';
 
-const apiKey = process.env.BREVO_API_KEY; // Brevo API key
+const apiKey = process.env.BREVO_API_KEY;
 
 export async function sendEmail(mailerId: number, listId: number) {
   try {
@@ -13,16 +13,21 @@ export async function sendEmail(mailerId: number, listId: number) {
       throw new Error(`Mailing with ID ${mailerId} not found.`);
     }
 
+    // Correct: Use 'select' instead of 'include' for JSON fields
     const list = await prisma.list.findUnique({
       where: { id: listId },
-      include: { emails: true },
+      select: {
+        emails: true, // Now correctly selecting the JSON field
+      },
     });
 
     if (!list) {
       throw new Error(`List with ID ${listId} not found.`);
     }
 
-    const recipients = list.emails.map((email) => email.address);
+    // Safely cast the JSON array to the expected Email type
+    const emails = list.emails as Array<{ address: string }>;
+    const recipients = emails.map((email) => email.address);
 
     const response = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
@@ -35,7 +40,7 @@ export async function sendEmail(mailerId: number, listId: number) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'api-key': apiKey, // Pass your Brevo API key here
+          'api-key': apiKey,
         },
       }
     );

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["metrics"]
 }
 
@@ -19,15 +19,15 @@ model Mailing {
   body       String
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
-
-  list      List          @relation(fields: [listId], references: [id])
-  template  EmailTemplate @relation(fields: [templateId], references: [id])
+  status     String        @default("pending")
+  list       List          @relation(fields: [listId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  template   EmailTemplate @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model List {
   id       Int       @id @default(autoincrement())
   name     String
-  emails   Json[]    // Store emails as JSON array
+  emails   Json[]
   mailings Mailing[]
 }
 
@@ -40,6 +40,6 @@ model EmailTemplate {
 }
 
 model RecipientGroup {
-  id    Int    @id @default(autoincrement())
-  name  String
+  id   Int    @id @default(autoincrement())
+  name String
 }

@@ -21,6 +21,13 @@ interface Mailing {
   };
 }
 
+interface EditMailingData {
+  templateId: number;
+  listId: number;
+  scheduleTime: string;
+  schedule: string;
+}
+
 export default function MailingsList() {
   const queryClient = useQueryClient();
   const [editingMailing, setEditingMailing] = useState<Mailing | null>(null);
@@ -65,7 +72,7 @@ export default function MailingsList() {
     }
   };
 
-  const handleEdit = async (data: any) => {
+  const handleEdit = async (data: EditMailingData) => {
     if (!editingMailing) return;
     try {
       await axios.put(`/api/mailings?id=${editingMailing.id}`, data);

@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-
 import { prisma } from "@/lib/prisma";
-
 import { mailQueue } from "@/lib/queue";
 
-import { PrismaClient } from "@prisma/client";
 
-// Create a new Prisma instance with logging
 
-const prismaWithLogging = new PrismaClient({
-  log: ["query", "info", "warn", "error"],
-});
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +38,6 @@ export async function POST(request: Request) {
     if (errors.length > 0) {
       return NextResponse.json(
         { error: "Validation failed", details: errors },
-
         { status: 400 }
       );
     }
@@ -54,24 +46,18 @@ export async function POST(request: Request) {
 
     const template = await prisma.emailTemplate.findUnique({
       where: { id: templateId },
-
       select: {
         id: true,
-
         name: true,
-
         subject: true,
-
         body: true,
       },
     });
 
     const list = await prisma.list.findUnique({
       where: { id: listId },
-
       select: {
         id: true,
-
         emails: true,
       },
     });
@@ -80,18 +66,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "Invalid template or list ID",
-
           details: {
             template: !!template,
-
             list: !!list,
-
             templateId,
-
             listId,
           },
         },
-
         { status: 400 }
       );
     }
@@ -102,7 +83,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "Invalid schedule date format",
-
           details: { receivedTime: scheduleTime },
         },
         { status: 400 }
@@ -115,7 +95,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "Scheduled time must be in the future",
-
           details: { scheduledTime: scheduleDate, currentTime: new Date() },
         },
         { status: 400 }
@@ -127,21 +106,14 @@ export async function POST(request: Request) {
     const newMailing = await prisma.mailing.create({
       data: {
         templateId,
-
         listId,
-
         schedule: scheduleDate,
-
         subject,
-
         body: mailBody,
-
         mailerId: 1,
       },
-
       include: {
         list: true,
-
         template: true,
       },
     });
@@ -152,22 +124,15 @@ export async function POST(request: Request) {
 
     await mailQueue.add(
       "sendEmail",
-
       {
         mailingId: newMailing.id,
-
         mailerId: newMailing.mailerId,
-
         listId: newMailing.listId,
-
         schedule: scheduleTime,
       },
-
       {
         delay: Math.max(0, delay),
-
         removeOnComplete: true,
-
         removeOnFail: true,
       }
     );
@@ -181,10 +146,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Error creating mailing",
-
         details: error instanceof Error ? error.message : "Unknown error",
       },
-
       { status: 500 }
     );
   }
@@ -224,20 +187,13 @@ export async function PUT(request: Request) {
 
     const updatedMailing = await prisma.mailing.update({
       where: { id: parseInt(id) },
-
       data: {
         templateId,
-
         listId,
-
         schedule: new Date(scheduleTime),
-
         subject: template.subject,
-
         body: template.body,
-
         updatedAt: new Date(),
-
         status: "pending", // Reset status to pending
       },
     });
@@ -248,7 +204,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(
       { error: "Failed to update mailing" },
-
       { status: 500 }
     );
   }
@@ -295,7 +250,6 @@ export async function DELETE(request: Request) {
         error: "Error deleting mailing",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-
       { status: 500 }
     );
   }
@@ -308,10 +262,8 @@ export async function GET() {
     const mailings = await prisma.mailing.findMany({
       include: {
         list: true,
-
         template: true,
       },
-
       orderBy: {
         createdAt: "desc",
       },
@@ -321,12 +273,9 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-
       count: mailings.length,
-
       data: mailings.map((mailing) => ({
         ...mailing,
-
         status: mailing.status || "pending",
       })),
     });
@@ -336,12 +285,9 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-
         error: "Failed to fetch mailings",
-
         details: error instanceof Error ? error.message : "Unknown error",
       },
-
       { status: 500 }
     );
   }

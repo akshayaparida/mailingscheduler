@@ -30,6 +30,7 @@ interface EditMailingData {
   templateId: number;
   listId: number;
   scheduleTime: string;
+  schedule: string;
 }
 
 export default function EditMailingModal({
@@ -44,6 +45,7 @@ export default function EditMailingModal({
     templateId: mailing.templateId,
     listId: mailing.listId,
     scheduleTime: new Date(mailing.schedule).toISOString().slice(0, 16),
+    schedule: mailing.schedule, // Ensure schedule is included here
   });
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function EditMailingModal({
         templateId: mailing.templateId,
         listId: mailing.listId,
         scheduleTime: new Date(mailing.schedule).toISOString().slice(0, 16),
+        schedule: mailing.schedule, // Keep schedule in sync with the data
       });
     }
   }, [isOpen, mailing]);
@@ -142,4 +145,4 @@ export default function EditMailingModal({
       </div>
     </div>
   );
-} 
+}

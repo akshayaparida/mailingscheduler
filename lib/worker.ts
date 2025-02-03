@@ -4,33 +4,37 @@ import { sendEmail } from './email';
 import { Redis } from 'ioredis';
 
 const connection = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
+  host: process.env.REDIS_HOST ?? 'localhost',  // Use nullish coalescing
+  port: Number(process.env.REDIS_PORT) ?? 6379,
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
+
+interface Email {
+  address: string;
+}
 
 const worker = new Worker(
   'mailQueue',
   async (job) => {
     console.log('Starting to process job:', job.id);
     console.log('Job data:', job.data);
-    
+
     try {
       const { mailingId } = job.data;
       console.log('Looking for mailing with ID:', mailingId);
 
-      // Fetch the mailing with its related data
+      // Fetch mailing data with types correctly applied
       const mailing = await prisma.mailing.findUnique({
         where: { 
-          id: Number(mailingId) 
+          id: Number(mailingId),
         },
         include: {
           list: {
             select: {
               id: true,
               name: true,
-              emails: true,
+              emails: true, // Type here is crucial
             },
           },
           template: {
@@ -44,31 +48,30 @@ const worker = new Worker(
         },
       });
 
-      console.log('Database query result:', mailing);
-
-      if (!mailing) {
+      if (!mailing || !mailing.list || !mailing.list.emails) {
         console.error(`No mailing found with ID ${mailingId}`);
         throw new Error(`Mailing ${mailingId} not found`);
       }
 
-      console.log('Found mailing:', JSON.stringify(mailing, null, 2));
       console.log(`Processing mailing ${mailingId} to ${mailing.list.emails.length} recipients`);
 
-      // Send email to each recipient
-      const emailPromises = mailing.list.emails.map(async (emailObj: any) => {
-        try {
-          console.log(`Attempting to send email to ${emailObj.address}`);
-          await sendEmail({
-            to: emailObj.address,
-            subject: mailing.subject,
-            html: mailing.body,
-          });
-          console.log(`Successfully sent email to ${emailObj.address}`);
-        } catch (error) {
-          console.error(`Failed to send email to ${emailObj.address}:`, error);
-          throw error;
-        }
-      });
+      // Ensuring the emails are of the correct type
+      const emailPromises = (mailing.list.emails as unknown as Email[])
+  .filter((emailObj): emailObj is Email => emailObj && typeof emailObj === 'object' && 'address' in emailObj)
+  .map(async (emailObj: Email) => {
+          try {
+            console.log(`Attempting to send email to ${emailObj.address}`);
+            await sendEmail({
+              to: emailObj.address,
+              subject: mailing.template.subject,
+              html: mailing.template.body,
+            });
+            console.log(`Successfully sent email to ${emailObj.address}`);
+          } catch (error) {
+            console.error(`Failed to send email to ${emailObj.address}:`, error);
+            throw error;
+          }
+        });
 
       await Promise.all(emailPromises);
       console.log(`Successfully completed sending all emails for mailing ${mailingId}`);

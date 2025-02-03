@@ -1,17 +1,19 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
-import ScheduleForm from './components/ScheduleForm';
+"use client";
 
-const Page = () => {
+import MailingForm from './components/MailingForm';
+import MailingsList from './components/MailingsList';
+import { Providers } from './providers';
+
+export default function Page() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow">
-        <ScheduleForm />
+    <Providers>
+      <main className="container mx-auto p-4 max-w-xl">
+  
+        <div className="space-y-8">
+          <MailingForm />
+          <MailingsList />
+        </div>
       </main>
-      <Footer />
-    </div>
+    </Providers>
   );
-};
-
-export default Page;
+}

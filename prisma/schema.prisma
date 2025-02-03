@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["metrics"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Mailing {
+  id         Int           @id @default(autoincrement())
+  mailerId   Int
+  listId     Int
+  templateId Int
+  schedule   DateTime
+  subject    String
+  body       String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  list      List          @relation(fields: [listId], references: [id])
+  template  EmailTemplate @relation(fields: [templateId], references: [id])
+}
+
+model List {
+  id       Int       @id @default(autoincrement())
+  name     String
+  emails   Json[]    // Store emails as JSON array
+  mailings Mailing[]
+}
+
+model EmailTemplate {
+  id       Int       @id @default(autoincrement())
+  name     String
+  subject  String
+  body     String
+  mailings Mailing[]
+}
+
+model RecipientGroup {
+  id    Int    @id @default(autoincrement())
+  name  String
+}
